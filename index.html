@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>多标签页租约锁</title>
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">BroadcastChannel + IndexedDB + Web Worker</p>
+          <h1>多标签页公平租约锁</h1>
+          <p class="subtitle">
+            多个浏览器标签页竞争同一资源，基于单调时间续约、保守时钟同步和 FIFO 队列避免死锁与饥饿。
+          </p>
+        </div>
+        <div class="tab-card">
+          <span class="label">当前标签页</span>
+          <strong id="tabId">启动中…</strong>
+          <span id="role" class="role idle">空闲</span>
+        </div>
+      </header>
+
+      <section class="grid dashboard">
+        <article class="panel lock-panel">
+          <div class="panel-head">
+            <div>
+              <p class="label">锁状态</p>
+              <h2 id="lockState">等待 Worker</h2>
+            </div>
+            <div id="leaseRing" class="ring">--</div>
+          </div>
+          <dl class="metadata">
+            <div><dt>持有者</dt><dd id="ownerId">—</dd></div>
+            <div><dt>栅栏令牌</dt><dd id="fenceToken">—</dd></div>
+            <div><dt>估计剩余</dt><dd id="leaseRemaining">—</dd></div>
+            <div><dt>安全边界</dt><dd id="safeRemaining">—</dd></div>
+          </dl>
+          <div class="actions">
+            <button id="acquireBtn" class="primary">请求锁</button>
+            <button id="releaseBtn" disabled>释放锁</button>
+            <button id="renewBtn" disabled>立即续约</button>
+            <button id="cancelBtn" class="ghost" disabled>取消等待</button>
+          </div>
+          <div class="write-row">
+            <input id="payloadInput" value="临界区写入内容" maxlength="80" />
+            <button id="writeBtn" disabled>带令牌写入</button>
+          </div>
+          <p id="payloadView" class="payload"></p>
+        </article>
+
+        <article class="panel controls-panel">
+          <div class="panel-head compact">
+            <div>
+              <p class="label">参数与故障注入</p>
+              <h2>运行控制</h2>
+            </div>
+          </div>
+
+          <label class="control">
+            <span>租约 TTL <strong id="ttlValue">8000 ms</strong></span>
+            <input id="ttlRange" type="range" min="3000" max="12000" step="1000" value="8000" />
+          </label>
+
+          <label class="control">
+            <span>模拟时钟偏移 <strong id="skewValue">0 ms</strong></span>
+            <input id="skewRange" type="range" min="-1500" max="1500" step="50" value="0" />
+          </label>
+
+          <label class="switch-row">
+            <input id="autoRenew" type="checkbox" checked />
+            <span>自动续约（每过 2/3 TTL）</span>
+          </label>
+
+          <div class="actions stacked">
+            <button id="failRenewBtn">模拟下一次续约失败</button>
+            <button id="zombieBtn" class="warning">冻结本标签页</button>
+          </div>
+          <p class="hint">
+            建议：先打开 3 个标签页；持有者冻结后，其他标签页会等待租约超时，再按队首授权。
+          </p>
+        </article>
+      </section>
+
+      <section class="grid data-grid">
+        <article class="panel">
+          <div class="panel-head compact">
+            <div>
+              <p class="label">FIFO 等待队列</p>
+              <h2 id="queueTitle">0 个等待者</h2>
+            </div>
+          </div>
+          <div id="queue" class="queue empty">暂无等待请求</div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head compact">
+            <div>
+              <p class="label">在线标签页与时钟</p>
+              <h2>时钟漂移估计</h2>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>标签页</th>
+                  <th>状态</th>
+                  <th>偏移</th>
+                  <th>误差</th>
+                  <th>RTT</th>
+                </tr>
+              </thead>
+              <tbody id="peers"></tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="panel events-panel">
+          <div class="panel-head compact">
+            <div>
+              <p class="label">实时事件</p>
+              <h2>租约审计日志</h2>
+            </div>
+          </div>
+          <ol id="events" class="events"></ol>
+        </article>
+      </section>
+    </main>
+
+    <script type="module" src="./src/app.js"></script>
+  </body>
+</html>
