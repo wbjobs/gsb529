@@ -1,0 +1,10 @@
+{
+  "name": "fair-lease-lock-tabs",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "python3 -m http.server 5173",
+    "test": "node --test && node test/module-link-check.mjs && node --check src/app.js && node --check src/concurrency.js"
+  }
+}

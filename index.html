@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>多标签页公平租约锁</title>
+    <link rel="stylesheet" href="src/styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">BroadcastChannel · IndexedDB · Web Worker</p>
+          <h1>多标签页公平租约锁</h1>
+          <p class="subtitle">FIFO 等待队列、fencing token、自动释放、续约失败保护与时钟漂移裕量。</p>
+        </div>
+        <div class="hero-actions">
+          <a class="button-link" href="concurrency.html">并发验收台</a>
+          <button id="openTab" class="secondary" type="button">打开竞争标签页</button>
+        </div>
+      </header>
+
+      <section class="grid">
+        <article class="panel lock-panel" id="lockPanel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Lock State</p>
+              <h2 id="lockState">初始化中</h2>
+            </div>
+            <span class="badge" id="lockBadge">—</span>
+          </div>
+          <div class="meter" aria-label="租约剩余时间">
+            <div id="leaseBar"></div>
+          </div>
+          <div class="metric-row">
+            <div>
+              <span>剩余租约</span>
+              <strong id="remainingTime">—</strong>
+            </div>
+            <div>
+              <span>漂移保护</span>
+              <strong id="uncertainty">—</strong>
+            </div>
+          </div>
+          <dl class="details">
+            <div><dt>资源</dt><dd id="resourceName">—</dd></div>
+            <div><dt>持有者</dt><dd id="holderName">—</dd></div>
+            <div><dt>Fencing Token</dt><dd id="fencingToken">—</dd></div>
+            <div><dt>续约次数</dt><dd id="renewCount">—</dd></div>
+          </dl>
+        </article>
+
+        <article class="panel controls-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Controls</p>
+              <h2>请求参数</h2>
+            </div>
+          </div>
+          <label>
+            资源 ID
+            <input id="resourceInput" value="orders/42" autocomplete="off">
+          </label>
+          <div class="two-col">
+            <label>
+              租约 (ms)
+              <input id="leaseInput" type="number" min="1000" max="60000" step="500" value="8000">
+            </label>
+            <label>
+              等待超时 (ms)
+              <input id="waitInput" type="number" min="0" step="500" placeholder="空 = 一直等待">
+            </label>
+          </div>
+          <div class="two-col">
+            <label>
+              模拟时钟偏差 (ms)
+              <input id="clockInput" type="number" step="100" value="0">
+            </label>
+            <label class="switch">
+              <input id="autoRenewInput" type="checkbox" checked>
+              自动续约
+            </label>
+          </div>
+          <div class="actions">
+            <button id="acquireBtn" type="button">获取锁</button>
+            <button id="renewBtn" type="button" class="secondary">立即续约</button>
+            <button id="releaseBtn" type="button" class="danger">释放 / 取消</button>
+          </div>
+          <p class="hint">提示：先点击“打开竞争标签页”，再让多个页面几乎同时获取同一资源。</p>
+        </article>
+      </section>
+
+      <section class="grid bottom-grid">
+        <article class="panel">
+          <div class="panel-heading compact">
+            <div>
+              <p class="eyebrow">FIFO Queue</p>
+              <h2>等待队列</h2>
+            </div>
+            <span class="badge" id="queueCount">0</span>
+          </div>
+          <div id="queueList" class="queue-list empty">暂无等待请求</div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-heading compact">
+            <div>
+              <p class="eyebrow">Peers</p>
+              <h2>标签页与时钟</h2>
+            </div>
+          </div>
+          <div id="peerList" class="peer-list empty">等待心跳...</div>
+        </article>
+      </section>
+
+      <section class="panel log-panel">
+        <div class="panel-heading compact">
+          <div>
+            <p class="eyebrow">Event Log</p>
+            <h2>实时事件</h2>
+          </div>
+          <button id="clearLog" type="button" class="secondary small">清空</button>
+        </div>
+        <ol id="eventLog" class="event-log"></ol>
+      </section>
+    </main>
+    <script type="module" src="src/app.js"></script>
+  </body>
+</html>
